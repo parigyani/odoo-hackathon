@@ -95,7 +95,7 @@ export default function Maintenance() {
                 required
                 value={formVehicle}
                 onChange={(e) => setFormVehicle(e.target.value)}
-                className="w-full border border-border rounded px-3 py-2 text-sm bg-white"
+                className="w-full border border-border rounded px-3 py-2 text-sm bg-surface"
               >
                 <option value="">Select a vehicle...</option>
                 {vehicles.map((v) => (

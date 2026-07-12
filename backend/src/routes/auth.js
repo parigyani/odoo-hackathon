@@ -53,13 +53,13 @@ authRouter.post(
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
       const attempts = user.failed_attempts + 1;
-      const locked = attempts >= LOCK_THRESHOLD;
+      const locked = attempts > LOCK_THRESHOLD;
       await query(
         `UPDATE users SET failed_attempts = $1, locked_until = $2 WHERE id = $3`,
         [locked ? 0 : attempts, locked ? new Date(Date.now() + LOCK_MINUTES * 60000) : null, user.id]
       );
       if (locked) {
-        throw new AppError(`Account locked after ${LOCK_THRESHOLD} failed attempts.`, 423);
+        throw new AppError(`Account locked after more than ${LOCK_THRESHOLD} failed attempts.`, 423);
       }
       throw invalidCredsError();
     }

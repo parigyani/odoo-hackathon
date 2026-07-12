@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { User } from "./lib/api";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -11,13 +11,30 @@ import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 import { Button } from "./components/ui";
 
+import Landing from "./pages/Landing";
+
 const NAV_ITEMS = ["Dashboard", "Fleet", "Drivers", "Trips", "Maintenance", "Fuel & Expenses", "Analytics", "Settings"];
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
+  const [showLogin, setShowLogin] = useState(false);
   const [activePage, setActivePage] = useState("Dashboard");
+  const [isDark, setIsDark] = useState(() => localStorage.getItem("theme") === "dark");
 
-  if (!user) return <Login onLogin={setUser} />;
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [isDark]);
+
+  if (!user) {
+    if (showLogin) return <Login onLogin={setUser} />;
+    return <Landing onSignIn={() => setShowLogin(true)} />;
+  }
 
   return (
     <div className="min-h-screen flex">
@@ -39,7 +56,7 @@ export default function App() {
       </aside>
 
       <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
-        <header className="border-b border-border bg-white px-6 py-3 flex items-center justify-between shrink-0">
+        <header className="border-b border-border bg-surface px-6 py-3 flex items-center justify-between shrink-0">
           <input
             placeholder="Search..."
             className="border border-border rounded px-3 py-1.5 text-sm w-64"
@@ -49,6 +66,9 @@ export default function App() {
             <span className="text-xs bg-brand/10 text-brand px-2 py-1 rounded capitalize">
               {user.role.replace("_", " ")}
             </span>
+            <Button variant="secondary" onClick={() => setIsDark(!isDark)}>
+              {isDark ? "☀️ Light" : "🌙 Dark"}
+            </Button>
             <Button
               variant="secondary"
               onClick={() => {

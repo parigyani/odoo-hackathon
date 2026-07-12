@@ -21,7 +21,7 @@ api.interceptors.response.use(
   }
 );
 
-export type Role = "fleet_manager" | "dispatcher" | "safety_officer" | "financial_analyst";
+export type Role = "admin" | "fleet_manager" | "dispatcher" | "safety_officer" | "financial_analyst";
 
 export interface User {
   id: string;
