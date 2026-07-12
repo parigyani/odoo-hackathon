@@ -142,6 +142,7 @@ tripsRouter.post(
       // passing the `status === 'dispatched'` check. Without it the vehicle
       // and driver could be freed twice (harmless but confusing) and
       // completed_at could be written twice with different timestamps.
+      // Also serialises against a concurrent /cancel that reads the same row.
       const tripResult = await client.query("SELECT * FROM trips WHERE id = $1 FOR UPDATE", [req.params.id]);
       const trip = tripResult.rows[0];
       if (!trip) throw new AppError("Trip not found", 404);
@@ -156,7 +157,23 @@ tripsRouter.post(
         [actual_distance ?? null, fuel_consumed ?? null, trip.id]
       );
 
+      // FOR UPDATE — locks the vehicle row before flipping it back to
+      // 'available'. Without this lock, a concurrent POST /maintenance
+      // request could read vehicle.status === 'on_trip' (allowing it to
+      // proceed), then /complete sets status = 'available', and the
+      // maintenance request subsequently sets status = 'in_shop' again —
+      // leaving the vehicle stuck in_shop with no active maintenance record
+      // explaining why. The lock ensures the status transitions are ordered.
+      await client.query("SELECT id FROM vehicles WHERE id = $1 FOR UPDATE", [trip.vehicle_id]);
       await client.query("UPDATE vehicles SET status = 'available' WHERE id = $1", [trip.vehicle_id]);
+
+      // FOR UPDATE — same reasoning as the vehicle lock above. Prevents a
+      // concurrent /dispatch from reading driver.status === 'on_trip'
+      // (blocking it correctly), but then /complete freeing the driver, and
+      // the dispatch retrying to assign the driver to a second trip before
+      // this transaction has committed. The lock guarantees the driver is
+      // fully released before any new dispatch can acquire it.
+      await client.query("SELECT id FROM drivers WHERE id = $1 FOR UPDATE", [trip.driver_id]);
       await client.query("UPDATE drivers SET status = 'available' WHERE id = $1", [trip.driver_id]);
 
       await client.query("COMMIT");
