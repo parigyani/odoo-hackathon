@@ -87,7 +87,15 @@ maintenanceRouter.post(
         [req.params.id]
       );
 
-      const vehicle = await client.query("SELECT status FROM vehicles WHERE id = $1", [log.rows[0].vehicle_id]);
+      // FOR UPDATE — locks the vehicle row before reading its status and
+      // potentially flipping it back to 'available'. Without this lock, a
+      // concurrent POST /maintenance could pass its own `status !== 'on_trip'`
+      // check, then /close sets the vehicle to 'available', and the concurrent
+      // request then inserts a new active maintenance log and sets status back
+      // to 'in_shop' — leaving a ghost log with no corresponding in_shop
+      // session. The FOR UPDATE serialises /close and POST /maintenance on
+      // the vehicle row so only one can mutate it at a time.
+      const vehicle = await client.query("SELECT status FROM vehicles WHERE id = $1 FOR UPDATE", [log.rows[0].vehicle_id]);
       if (vehicle.rows[0]?.status !== "retired") {
         await client.query(`UPDATE vehicles SET status = 'available' WHERE id = $1`, [log.rows[0].vehicle_id]);
       }
