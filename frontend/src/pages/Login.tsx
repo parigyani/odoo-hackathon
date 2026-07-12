@@ -3,6 +3,7 @@ import { api, User } from "../lib/api";
 import { Button, ErrorBanner } from "../components/ui";
 
 const ROLES = [
+  { value: "admin", label: "System Admin" },
   { value: "fleet_manager", label: "Fleet Manager" },
   { value: "dispatcher", label: "Dispatcher" },
   { value: "safety_officer", label: "Safety Officer" },
@@ -37,7 +38,7 @@ export default function Login({ onLogin }: { onLogin: (user: User) => void }) {
         <h1 className="font-display text-3xl font-semibold text-brand">TransitOps</h1>
         <p className="text-ink/60 mt-2">Smart Transport Operations Platform</p>
         <div className="mt-12">
-          <p className="font-medium mb-3">One login, four roles:</p>
+          <p className="font-medium mb-3">One login, five roles:</p>
           <ul className="space-y-1 text-ink/70 text-sm">
             {ROLES.map((r) => (
               <li key={r.value}>• {r.label}</li>
@@ -46,7 +47,7 @@ export default function Login({ onLogin }: { onLogin: (user: User) => void }) {
         </div>
       </div>
 
-      <div className="flex items-center justify-center px-6 bg-white">
+      <div className="flex items-center justify-center px-6 bg-canvas">
         <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
           <div>
             <h2 className="font-display text-xl font-semibold">Sign in to your account</h2>
@@ -83,7 +84,7 @@ export default function Login({ onLogin }: { onLogin: (user: User) => void }) {
             <select
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="mt-1 w-full border border-border rounded px-3 py-2 text-sm bg-white"
+              className="mt-1 w-full border border-border rounded px-3 py-2 text-sm bg-canvas"
             >
               {ROLES.map((r) => (
                 <option key={r.value} value={r.value}>

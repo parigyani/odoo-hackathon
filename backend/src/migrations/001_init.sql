@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
     name            TEXT NOT NULL,
     email           TEXT NOT NULL UNIQUE,
     password_hash   TEXT NOT NULL,
-    role            TEXT NOT NULL CHECK (role IN ('fleet_manager', 'dispatcher', 'safety_officer', 'financial_analyst')),
+    role            TEXT NOT NULL CHECK (role IN ('admin', 'fleet_manager', 'dispatcher', 'safety_officer', 'financial_analyst')),
     failed_attempts INT NOT NULL DEFAULT 0,
     locked_until    TIMESTAMPTZ,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now()

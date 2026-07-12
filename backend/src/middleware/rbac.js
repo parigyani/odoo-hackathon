@@ -1,6 +1,7 @@
 // Permission matrix, copied directly from the Settings & RBAC mockup.
 // "full" = read/write, "view" = read-only, "none" = no access.
 const PERMISSIONS = {
+  admin:             { fleet: "full", drivers: "full", trips: "full", fuel_expenses: "full", analytics: "full", maintenance: "full" },
   fleet_manager:     { fleet: "full", drivers: "full", trips: "none", fuel_expenses: "none", analytics: "full", maintenance: "full" },
   dispatcher:        { fleet: "view", drivers: "none", trips: "full", fuel_expenses: "none", analytics: "none", maintenance: "none" },
   safety_officer:    { fleet: "none", drivers: "full", trips: "view", fuel_expenses: "none", analytics: "none", maintenance: "none" },

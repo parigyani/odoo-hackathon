@@ -148,7 +148,7 @@ export default function FuelExpenses() {
               {fuelError && <ErrorBanner message={fuelError} className="mb-3" />}
               <form onSubmit={handleLogFuel} className="space-y-3">
                 <div>
-                  <select required value={fuelVehicle} onChange={e => setFuelVehicle(e.target.value)} className="w-full border border-border rounded px-3 py-2 text-sm bg-white">
+                  <select required value={fuelVehicle} onChange={e => setFuelVehicle(e.target.value)} className="w-full border border-border rounded px-3 py-2 text-sm bg-surface">
                     <option value="">Select vehicle...</option>
                     {vehicles.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
                   </select>
@@ -212,7 +212,7 @@ export default function FuelExpenses() {
               {expError && <ErrorBanner message={expError} className="mb-3" />}
               <form onSubmit={handleAddExpense} className="space-y-3">
                 <div>
-                  <select required value={expVehicle} onChange={e => setExpVehicle(e.target.value)} className="w-full border border-border rounded px-3 py-2 text-sm bg-white">
+                  <select required value={expVehicle} onChange={e => setExpVehicle(e.target.value)} className="w-full border border-border rounded px-3 py-2 text-sm bg-surface">
                     <option value="">Select vehicle...</option>
                     {vehicles.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
                   </select>

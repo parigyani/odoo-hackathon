@@ -114,7 +114,7 @@ export default function Fleet() {
                 <select
                   value={addForm.type}
                   onChange={(e) => setAddForm({ ...addForm, type: e.target.value })}
-                  className="w-full border border-border rounded px-3 py-1.5 text-sm bg-white"
+                  className="w-full border border-border rounded px-3 py-1.5 text-sm bg-surface"
                 >
                   <option value="Truck">Truck</option>
                   <option value="Van">Van</option>
@@ -172,7 +172,7 @@ export default function Fleet() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="border border-border rounded px-3 py-1.5 text-sm bg-white"
+            className="border border-border rounded px-3 py-1.5 text-sm bg-surface"
           >
             <option value="all">All Types</option>
             <option value="Truck">Truck</option>
@@ -182,7 +182,7 @@ export default function Fleet() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="border border-border rounded px-3 py-1.5 text-sm bg-white"
+            className="border border-border rounded px-3 py-1.5 text-sm bg-surface"
           >
             <option value="all">All Statuses</option>
             <option value="available">Available</option>

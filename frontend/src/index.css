@@ -5,3 +5,43 @@
 body {
   -webkit-font-smoothing: antialiased;
 }
+
+@layer base {
+  :root {
+    --color-ink: #0F172A;
+    --color-canvas: #F8FAFC;
+    --color-surface: #FFFFFF;
+    --color-border: #E2E8F0;
+    
+    /* Deep Navy */
+    --color-brand: #0B132B;
+    --color-brand-light: #1C2541;
+    --color-brand-dark: #000000;
+    
+    /* Electric Blue */
+    --color-accent: #3A86FF;
+    --color-accent-dark: #2563EB;
+    
+    --color-danger: #EF4444;
+    --color-success: #10B981; /* Emerald */
+  }
+
+  .dark {
+    --color-ink: #F8FAFC;
+    --color-canvas: #0B132B; /* Deep Navy */
+    --color-surface: #131E3A; /* Slightly lighter navy for cards */
+    --color-border: #1E293B;
+    
+    /* Light Blue */
+    --color-brand: #E0F2FE;
+    --color-brand-light: #BAE6FD;
+    --color-brand-dark: #7DD3FC;
+
+    /* Cyan / Electric Blue */
+    --color-accent: #06B6D4;
+    --color-accent-dark: #0891B2;
+
+    --color-danger: #EF4444;
+    --color-success: #10B981; /* Emerald */
+  }
+}
