@@ -37,6 +37,10 @@ maintenanceRouter.post(
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
+      // FOR UPDATE — prevents two concurrent POST /maintenance calls for the
+      // same vehicle from both reading status != 'on_trip' and inserting
+      // duplicate active maintenance records, which would leave the vehicle
+      // double-locked in 'in_shop' with two open logs to close.
       const vehicle = await client.query("SELECT * FROM vehicles WHERE id = $1 FOR UPDATE", [vehicle_id]);
       if (!vehicle.rows.length) throw new AppError("Vehicle not found", 404);
       if (vehicle.rows[0].status === "on_trip") {
@@ -69,6 +73,11 @@ maintenanceRouter.post(
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
+      // FOR UPDATE — prevents two concurrent POST /maintenance/:id/close calls
+      // from both passing the `status !== 'completed'` check and writing
+      // 'completed' twice. Without it both would also fire the vehicle status
+      // flip, causing a harmless but confusing double-update and making audit
+      // logs misleading.
       const log = await client.query("SELECT * FROM maintenance_logs WHERE id = $1 FOR UPDATE", [req.params.id]);
       if (!log.rows.length) throw new AppError("Maintenance log not found", 404);
       if (log.rows[0].status === "completed") throw new AppError("Already closed", 409);
