@@ -46,6 +46,33 @@ vehiclesRouter.get(
   })
 );
 
+vehiclesRouter.get(
+  "/:id",
+  requirePermission("fleet", "view"),
+  asyncHandler(async (req, res) => {
+    const vehicleResult = await query(`SELECT * FROM vehicles WHERE id = $1`, [req.params.id]);
+    if (!vehicleResult.rows.length) throw new AppError("Vehicle not found", 404);
+
+    const vehicle = vehicleResult.rows[0];
+
+    const maintenanceResult = await query(
+      `SELECT * FROM maintenance_logs WHERE vehicle_id = $1 ORDER BY logged_at DESC`,
+      [req.params.id]
+    );
+
+    const fuelResult = await query(
+      `SELECT * FROM fuel_logs WHERE vehicle_id = $1 ORDER BY logged_at DESC`,
+      [req.params.id]
+    );
+
+    res.json({
+      ...vehicle,
+      maintenance_logs: maintenanceResult.rows,
+      fuel_logs: fuelResult.rows,
+    });
+  })
+);
+
 vehiclesRouter.post(
   "/",
   requirePermission("fleet", "full"),
@@ -73,6 +100,15 @@ vehiclesRouter.patch(
   requirePermission("fleet", "full"),
   asyncHandler(async (req, res) => {
     const { status, odometer } = req.body;
+    
+    if (status === "retired") {
+      const currentVehicle = await query(`SELECT status FROM vehicles WHERE id = $1`, [req.params.id]);
+      if (!currentVehicle.rows.length) throw new AppError("Vehicle not found", 404);
+      if (currentVehicle.rows[0].status === "on_trip") {
+        throw new AppError("Cannot retire a vehicle that is currently on a trip", 409);
+      }
+    }
+
     const result = await query(
       `UPDATE vehicles SET status = COALESCE($1, status), odometer = COALESCE($2, odometer) WHERE id = $3 RETURNING *`,
       [status ?? null, odometer ?? null, req.params.id]
