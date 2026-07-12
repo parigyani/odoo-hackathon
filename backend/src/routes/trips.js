@@ -68,6 +68,10 @@ tripsRouter.post(
     try {
       await client.query("BEGIN");
 
+      // FOR UPDATE — prevents two simultaneous dispatch requests for the same
+      // trip from both passing the `status === 'draft'` check and creating
+      // duplicate on_trip state. The first writer wins; the second sees the
+      // already-updated row and gets a 409.
       const tripResult = await client.query("SELECT * FROM trips WHERE id = $1 FOR UPDATE", [req.params.id]);
       const trip = tripResult.rows[0];
       if (!trip) throw new AppError("Trip not found", 404);
@@ -76,6 +80,9 @@ tripsRouter.post(
         throw new AppError("Trip needs both a vehicle and a driver assigned before dispatch.", 422);
       }
 
+      // FOR UPDATE — prevents two concurrent dispatches from both reading the
+      // vehicle as 'available' and assigning it to different trips. Without
+      // this lock the availability check and the status flip are not atomic.
       const vehicleResult = await client.query("SELECT * FROM vehicles WHERE id = $1 FOR UPDATE", [trip.vehicle_id]);
       const vehicle = vehicleResult.rows[0];
       if (!vehicle) throw new AppError("Vehicle not found", 404);
@@ -83,6 +90,9 @@ tripsRouter.post(
         throw new AppError(`Vehicle ${vehicle.name} is not available (status: ${vehicle.status})`, 409);
       }
 
+      // FOR UPDATE — same race condition as the vehicle lock above, but for
+      // the driver. Prevents the same driver being dispatched on two trips
+      // simultaneously if two clients call /dispatch at the same instant.
       const driverResult = await client.query("SELECT * FROM drivers WHERE id = $1 FOR UPDATE", [trip.driver_id]);
       const driver = driverResult.rows[0];
       if (!driver) throw new AppError("Driver not found", 404);
@@ -128,6 +138,10 @@ tripsRouter.post(
     try {
       await client.query("BEGIN");
 
+      // FOR UPDATE — prevents two concurrent /complete calls from both
+      // passing the `status === 'dispatched'` check. Without it the vehicle
+      // and driver could be freed twice (harmless but confusing) and
+      // completed_at could be written twice with different timestamps.
       const tripResult = await client.query("SELECT * FROM trips WHERE id = $1 FOR UPDATE", [req.params.id]);
       const trip = tripResult.rows[0];
       if (!trip) throw new AppError("Trip not found", 404);
@@ -165,6 +179,10 @@ tripsRouter.post(
     try {
       await client.query("BEGIN");
 
+      // FOR UPDATE — prevents a /cancel and a /dispatch (or a /complete)
+      // from racing on the same trip row. Without it a cancellation could
+      // flip status to 'cancelled' while dispatch is mid-transaction,
+      // leaving the vehicle/driver stuck as 'on_trip' with no active trip.
       const tripResult = await client.query("SELECT * FROM trips WHERE id = $1 FOR UPDATE", [req.params.id]);
       const trip = tripResult.rows[0];
       if (!trip) throw new AppError("Trip not found", 404);
