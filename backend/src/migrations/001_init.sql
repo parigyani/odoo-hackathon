@@ -176,5 +176,37 @@ INSERT INTO trips (
     410, 150,
     157, 18.4,
     'completed', now() - interval '2 days', now() - interval '1 day'
+),
+-- TR-004  cancelled — shows the cancelled lifecycle step in the Live Board
+(
+    'a1000000-0000-0000-0000-000000000004',
+    'TR-004', 'Vadodara', 'Ahmedabad',
+    (SELECT id FROM vehicles WHERE registration_number = 'GJ01AB452'),
+    (SELECT id FROM drivers WHERE license_number = 'DL-88213'),
+    180, 110,
+    NULL, NULL,
+    'cancelled', NULL, NULL
+),
+-- TR-005  draft — queued but not yet dispatched; gives the dispatcher queue
+--         at least two rows so pagination / filtering can be demoed
+(
+    'a1000000-0000-0000-0000-000000000005',
+    'TR-005', 'Surat', 'Rajkot',
+    NULL,
+    NULL,
+    620, 320,
+    NULL, NULL,
+    'draft', NULL, NULL
+),
+-- TR-006  completed — older trip with TRUCK-11 + Suresh; gives Analytics
+--         a second completed data-point for cost-per-km trend charts
+(
+    'a1000000-0000-0000-0000-000000000006',
+    'TR-006', 'Ahmedabad', 'Mumbai',
+    (SELECT id FROM vehicles WHERE registration_number = 'GJ01AB998'),
+    (SELECT id FROM drivers WHERE license_number = 'DL-90045'),
+    3800, 530,
+    541, 68.2,
+    'completed', now() - interval '10 days', now() - interval '9 days'
 )
 ON CONFLICT (trip_code) DO NOTHING;
