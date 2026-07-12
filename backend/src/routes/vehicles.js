@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { query } from "../db/pool.js";
+import { pool, query } from "../db/pool.js";
 import { asyncHandler, AppError } from "../middleware/errorHandler.js";
 import { validate } from "../middleware/validate.js";
 import { requireAuth } from "../middleware/auth.js";
@@ -56,7 +56,7 @@ vehiclesRouter.get(
     const vehicle = vehicleResult.rows[0];
 
     const maintenanceResult = await query(
-      `SELECT * FROM maintenance_logs WHERE vehicle_id = $1 ORDER BY logged_at DESC`,
+      `SELECT * FROM maintenance_logs WHERE vehicle_id = $1 ORDER BY service_date DESC`,
       [req.params.id]
     );
 
@@ -100,20 +100,34 @@ vehiclesRouter.patch(
   requirePermission("fleet", "full"),
   asyncHandler(async (req, res) => {
     const { status, odometer } = req.body;
+    const client = await pool.connect();
     
-    if (status === "retired") {
-      const currentVehicle = await query(`SELECT status FROM vehicles WHERE id = $1`, [req.params.id]);
-      if (!currentVehicle.rows.length) throw new AppError("Vehicle not found", 404);
-      if (currentVehicle.rows[0].status === "on_trip") {
-        throw new AppError("Cannot retire a vehicle that is currently on a trip", 409);
-      }
-    }
+    try {
+      await client.query("BEGIN");
 
-    const result = await query(
-      `UPDATE vehicles SET status = COALESCE($1, status), odometer = COALESCE($2, odometer) WHERE id = $3 RETURNING *`,
-      [status ?? null, odometer ?? null, req.params.id]
-    );
-    if (!result.rows.length) throw new AppError("Vehicle not found", 404);
-    res.json(result.rows[0]);
+      if (status === "retired") {
+        // FOR UPDATE — prevents a race condition with POST /trips/:id/dispatch
+        // where a vehicle is dispatched and retired at the exact same time.
+        const currentVehicle = await client.query(`SELECT status FROM vehicles WHERE id = $1 FOR UPDATE`, [req.params.id]);
+        if (!currentVehicle.rows.length) throw new AppError("Vehicle not found", 404);
+        if (currentVehicle.rows[0].status === "on_trip") {
+          throw new AppError("Cannot retire a vehicle that is currently on a trip", 409);
+        }
+      }
+
+      const result = await client.query(
+        `UPDATE vehicles SET status = COALESCE($1, status), odometer = COALESCE($2, odometer) WHERE id = $3 RETURNING *`,
+        [status ?? null, odometer ?? null, req.params.id]
+      );
+      if (!result.rows.length) throw new AppError("Vehicle not found", 404);
+      
+      await client.query("COMMIT");
+      res.json(result.rows[0]);
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
   })
 );
