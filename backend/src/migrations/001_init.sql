@@ -132,3 +132,49 @@ INSERT INTO drivers (name, license_number, license_category, license_expiry, con
     ('Priya',  'DL-77031', 'LMV', '2028-08-01', '99110xxxxx', 99, 'on_trip'),
     ('Suresh', 'DL-90045', 'HMV', '2027-01-01', '97440xxxxx', 88, 'off_duty')
 ON CONFLICT (license_number) DO NOTHING;
+
+-- ===================== SEED TRIPS =====================
+-- Three trips in different lifecycle stages so the Dashboard KPIs,
+-- Live Board, and Analytics screens have real numbers on first load.
+--
+-- Vehicle / driver UUIDs are resolved by sub-select so we don't need to
+-- hard-code the auto-generated UUIDs from the vehicles/drivers inserts above.
+
+INSERT INTO trips (
+    id, trip_code, source, destination,
+    vehicle_id, driver_id,
+    cargo_weight, planned_distance,
+    actual_distance, fuel_consumed,
+    status, dispatched_at, completed_at
+) VALUES
+-- TR-001  draft — not yet assigned a driver; created today
+(
+    'a1000000-0000-0000-0000-000000000001',
+    'TR-001', 'Ahmedabad', 'Surat',
+    (SELECT id FROM vehicles WHERE registration_number = 'GJ01AB452'),
+    NULL,
+    320, 270,
+    NULL, NULL,
+    'draft', NULL, NULL
+),
+-- TR-002  dispatched — TRUCK-11 + Priya are currently on this trip
+(
+    'a1000000-0000-0000-0000-000000000002',
+    'TR-002', 'Surat', 'Mumbai',
+    (SELECT id FROM vehicles WHERE registration_number = 'GJ01AB998'),
+    (SELECT id FROM drivers WHERE license_number = 'DL-77031'),
+    4200, 280,
+    NULL, NULL,
+    'dispatched', now() - interval '3 hours', NULL
+),
+-- TR-003  completed — closed yesterday with real actuals
+(
+    'a1000000-0000-0000-0000-000000000003',
+    'TR-003', 'Mumbai', 'Pune',
+    (SELECT id FROM vehicles WHERE registration_number = 'GJ01AB452'),
+    (SELECT id FROM drivers WHERE license_number = 'DL-88213'),
+    410, 150,
+    157, 18.4,
+    'completed', now() - interval '2 days', now() - interval '1 day'
+)
+ON CONFLICT (trip_code) DO NOTHING;
