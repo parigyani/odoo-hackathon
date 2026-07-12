@@ -30,6 +30,15 @@ driversRouter.get(
   })
 );
 
+driversRouter.get(
+  "/:id/trips",
+  requirePermission("trips", "view"),
+  asyncHandler(async (req, res) => {
+    const result = await query(`SELECT * FROM trips WHERE driver_id = $1 ORDER BY created_at DESC`, [req.params.id]);
+    res.json(result.rows);
+  })
+);
+
 driversRouter.post(
   "/",
   requirePermission("drivers", "full"),
